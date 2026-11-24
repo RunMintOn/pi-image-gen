@@ -1,0 +1,4 @@
+OpenAI Codex
+Copyright 2025 OpenAI
+
+The imagegen Skill and tool description are adapted from OpenAI Codex at 5e857c65a. Changes cover Pi tool discovery, file-based references, and output handling. The adapted Skill uses the built-in-tool workflow.
