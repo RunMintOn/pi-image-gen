@@ -4,7 +4,7 @@
 
 ## 使用
 
-1. 在项目目录运行 `pi install "$PWD"`，或用 `pi install git:github.com/RunMintOn/pi-image-gen` 从 GitHub 安装。安装私有仓库需要有读取权限。
+1. 运行 `pi install git:github.com/RunMintOn/pi-image-gen` 从 GitHub 安装，也可以在本地项目目录运行 `pi install "$PWD"`。
 2. 在 Pi 中用 `/login` 登录 **OpenAI (ChatGPT Plus/Pro)**。
 3. 在 Pi 设置的 `defaultTools` 数组里加上 `"+tool_search"`，保留已有项。也可以在启动时加 `--tools +tool_search`。
 4. 对 Pi 说「画一张透明背景的橘猫贴纸」。生成后可以接着说「给刚才那只猫加一条红围巾」。
