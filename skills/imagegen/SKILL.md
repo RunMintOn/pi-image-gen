@@ -11,9 +11,9 @@ license: Apache-2.0
 In Pi, `image_gen` is registered with `deferred` exposure, so its declaration is not sent up front. Reach it from a `codemode` script:
 
 ```js
-// @options: {"timeout_ms": 120000}
 const result = await tools.image_gen({ prompt: "..." }); // prompt, transparent_background, referenced_image_paths
-image(result.image_url);                                 // result also carries output_hint with the saved path
+image(result.image_url);
+text(result.output_hint); // Show the saved path for delivery and follow-up edits.
 ```
 
 `await describeTool("image_gen")` returns the full declaration when you need the exact fields. If this Pi enables `tool_search`, searching `image_gen` also works and lets you call the tool directly.

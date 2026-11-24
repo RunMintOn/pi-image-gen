@@ -28,20 +28,28 @@ export default function (pi: ExtensionAPI) {
 		log({ kind: "request", imageDeclaration: imageDeclaration(event.payload) ?? null });
 	});
 	pi.on("tool_call", (event) => {
+		log({
+			kind: "call",
+			name: event.toolName,
+			toolCallId: event.toolCallId,
+			parentToolCallId: event.parentToolCallId,
+			args: event.input,
+		});
 		if (event.toolName === "image_gen") {
 			if (attemptedImageCall) return { block: true, reason: "This E2E test allows one image request per phase." };
 			attemptedImageCall = true;
 		}
-		log({ kind: "call", name: event.toolName, args: event.input });
 	});
 	pi.on("tool_result", (event) => {
-		if (event.toolName !== "image_gen") return;
+		if (event.toolName !== "image_gen" && event.toolName !== "codemode") return;
 		log({
 			kind: "result",
+			name: event.toolName,
+			toolCallId: event.toolCallId,
 			isError: event.isError,
 			mimeTypes: event.content.flatMap((block) => block.type === "image" ? [block.mimeType] : []),
 			text: event.content.flatMap((block) => block.type === "text" ? [block.text] : []),
-			details: event.details,
+			details: event.toolName === "image_gen" ? event.details : undefined,
 		});
 	});
 }
