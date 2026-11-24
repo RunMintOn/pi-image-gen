@@ -17,4 +17,4 @@
 
 首版在 Pi 1.6.0 上通过了 4 项本地测试和 2 次真实生图请求。实测模型自行读取 Skill、在 `codemode` 脚本里调用工具，获得透明 PNG，再用返回的路径完成下一轮编辑。两张图均有 alpha 通道。
 
-Skill 和工具说明改编自 [Codex `5e857c65a`](https://github.com/openai/codex/commit/5e857c65a529587c052b656769122b7902e8ed3d)。详见 [首版规格](SPEC.md) 和 [NOTICE](NOTICE)。
+Skill 和工具说明改编自 [Codex `5e857c65a`](https://github.com/openai/codex/commit/5e857c65a529587c052b656769122b7902e8ed3d)。详见 [首版规格](SPEC.md) 和 [NOTICE](NOTICE)。改代码前先看 [AGENTS.md](AGENTS.md)，里面记了安装形态、`codemode` 调用机制和已经踩过的测试坑。
