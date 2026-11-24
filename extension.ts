@@ -9,6 +9,10 @@ export default function (pi: ExtensionAPI) {
 		label: "Image generation",
 		description: readFileSync(new URL("./imagegen_description.md", import.meta.url), "utf8"),
 		exposure: "deferred",
+		outputSchema: Type.Object({
+			image_url: Type.String({ description: "Generated image as a data URL" }),
+			output_hint: Type.String({ description: "Saved path and delivery guidance" }),
+		}),
 		parameters: Type.Object({
 			prompt: Type.String(),
 			transparent_background: Type.Optional(Type.Boolean({
@@ -30,11 +34,13 @@ export default function (pi: ExtensionAPI) {
 				}
 			}, { signal });
 			const path = await saveImage(getAgentDir(), ctx.sessionManager.getSessionId(), callId, image);
+			const outputHint = `Generated image saved at ${path}`;
 			return {
 				content: [
 					{ type: "image", data: image.toString("base64"), mimeType: "image/png" },
-					{ type: "text", text: `Generated image saved at ${path}` },
+					{ type: "text", text: outputHint },
 				],
+				structuredContent: { image_url: `data:image/png;base64,${image.toString("base64")}`, output_hint: outputHint },
 				details: { path },
 			};
 		},

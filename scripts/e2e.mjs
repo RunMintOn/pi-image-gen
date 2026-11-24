@@ -13,9 +13,9 @@ function prompt(phase, message) {
 	const trace = join(work, `${phase}.jsonl`);
 	const run = spawnSync("pi", [
 		"--offline", "--no-approve", "--no-context-files", "--no-mcp", "-ne", "-ns",
-		"-e", root, "-e", "builtin:tool-search", "-e", join(root, "scripts/e2e-trace.ts"),
-		"--skill", join(root, "skills/imagegen"), "--tools", "+tool_search",
-		"--exclude-tools", "bash,powershell,edit,write,grep,find,ls,codemode",
+		"-e", root, "-e", join(root, "scripts/e2e-trace.ts"), "-e", "builtin:codemode",
+		"--skill", join(root, "skills/imagegen"), "--tools", "+codemode",
+		"--exclude-tools", "bash,powershell,edit,write,grep,find,ls",
 		"--model", process.env.PI_IMAGE_GEN_TEST_MODEL ?? "openai-codex/gpt-5.6-luna",
 		"--session", join(work, "session.jsonl"),
 		"--thinking", "low", "-p", message,
@@ -26,7 +26,7 @@ function prompt(phase, message) {
 }
 
 function imagePath(events) {
-	const results = events.filter((event) => event.kind === "result");
+	const results = events.filter((event) => event.kind === "result" && event.mimeTypes.length > 0);
 	assert.equal(results.length, 1, JSON.stringify(results));
 	const [result] = results;
 	assert.equal(result.isError, false, result.text.join("\n"));
@@ -39,14 +39,11 @@ function imagePath(events) {
 
 const generate = prompt("generate", "请生成一张透明背景 PNG。只要一张，画一只扁平矢量插画风格的黄色橡皮鸭，独立居中，直接给我预览。");
 assert.equal(generate.find((event) => event.kind === "request").imageDeclaration, null);
+assert.equal(generate.some((event) => event.name === "tool_search"), false);
 const read = generate.findIndex((event) => event.name === "read" && event.args.path.endsWith("/skills/imagegen/SKILL.md"));
-const search = generate.findIndex((event) => event.name === "tool_search");
+const script = generate.findIndex((event) => event.name === "codemode");
 const create = generate.findIndex((event) => event.name === "image_gen");
-assert.ok(read >= 0 && search > read && create > search, "expected Skill → search → image generation");
-const declaration = generate.find((event) => event.imageDeclaration)?.imageDeclaration;
-assert.equal(declaration?.description, readFileSync(join(root, "imagegen_description.md"), "utf8"));
-assert.deepEqual(Object.keys(declaration.parameters.properties).sort(), ["prompt", "referenced_image_paths", "transparent_background"]);
-assert.deepEqual(declaration.parameters.required, ["prompt"]);
+assert.ok(read >= 0 && script > read && create > script, "expected Skill → codemode → image generation");
 assert.equal(generate[create].args.transparent_background, true);
 assert.equal(generate[create].args.referenced_image_paths?.length ?? 0, 0);
 const original = imagePath(generate);

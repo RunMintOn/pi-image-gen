@@ -8,7 +8,15 @@ license: Apache-2.0
 
 ## Tool discovery
 
-Use the `image_gen` tool by default for normal image generation and editing requests. If it is not available yet, call `tool_search` with query `image_gen` and limit `1`, then call the tool. If the search tool is unavailable, ask the user to enable `tool_search` in Pi.
+In Pi, `image_gen` is registered with `deferred` exposure, so its declaration is not sent up front. Reach it from a `codemode` script:
+
+```js
+// @options: {"timeout_ms": 120000}
+const result = await tools.image_gen({ prompt: "..." }); // prompt, transparent_background, referenced_image_paths
+image(result.image_url);                                 // result also carries output_hint with the saved path
+```
+
+`await describeTool("image_gen")` returns the full declaration when you need the exact fields. If this Pi enables `tool_search`, searching `image_gen` also works and lets you call the tool directly.
 
 ## When to use
 - Generate a new image (concept art, product shot, cover, website hero)

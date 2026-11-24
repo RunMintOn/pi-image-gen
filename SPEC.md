@@ -7,13 +7,14 @@
 ```mermaid
 flowchart LR
     A["用户提出生图或改图请求"] --> B["模型读取 imagegen Skill"]
-    B --> C["tool_search 搜索 image_gen"]
-    C --> D["模型直接调用 image_gen"]
-    D --> E["扩展保存并返回图片"]
+    B --> C["codemode 脚本\ndescribeTool / ALL_TOOLS"]
+    C --> D["脚本内调用 tools.image_gen"]
+    D --> E["扩展保存图片并返回 image_url"]
+    E --> F["脚本 image(result.image_url) 预览"]
 ```
 
-- 扩展以 `exposure: "deferred"` 注册 `image_gen`。平时模型看到 Skill 的名称、简短说明和路径，生图工具的完整声明在搜索前不进入请求。启用 Pi 的 `tool_search` 是安装条件。安装说明写明 `defaultTools` 的 `+tool_search` 配置。
-- Skill 指示模型在工具尚未加载时搜索精确名称 `image_gen`。找到后模型在下一次请求拿到工具声明，后续同一会话分支可以直接调用。模型漏读 Skill 时，用户可用 `/skill:imagegen` 显式加载。
+- 扩展以 `exposure: "deferred"` 注册 `image_gen`。平时模型看到 Skill 的名称、简短说明和路径，生图工具的声明不进入请求。`codemode` 的 `ALL_TOOLS` 仍列出它并带有完整声明，`describeTool("image_gen")` 可读取参数，脚本里用 `tools.image_gen(...)` 调用。启用 `codemode` 是安装条件；开启 `tool_search` 时也可以搜索后直接调用。
+- 工具声明 `outputSchema` 并返回 `structuredContent`，其中 `image_url` 是 data URL，`output_hint` 带保存路径。这对应 Codex 的 code-mode 结果，让脚本能拿 `image()` 出预览。模型漏读 Skill 时，用户可用 `/skill:imagegen` 显式加载。
 - Skill 沿用 Codex 的提示词和交付原则。简单请求可以补充相关的构图或光线建议，详细请求保留原有约束，文字内容按用户指定的字面值保留。改图时说明修改对象和需要保留的内容。预览展示图片，项目素材交付到工作区，用户指定路径时按要求交付。处理透明图时保留 alpha 通道。
 - Codex 把 `imagegen_description.md` 作为工具说明。Pi 的工具说明也使用这份原文作底稿，适配工具名、图片读取和历史取图差异。Pi 的 `promptSnippet` 和 `promptGuidelines` 留空，模型只在工具加载后收到这段完整说明。集成测试记录 Pi 实际发给模型的声明。
 
@@ -41,7 +42,7 @@ flowchart LR
 ## 结果和连续改图
 
 - 取 `data[0].b64_json`，解码后保存原始 PNG。空结果、无效图片或保存失败要有明确反馈。默认路径为 `<Pi agent 目录>/generated_images/<会话 ID>/<调用 ID>.png`，避免把预览文件直接写进项目。
-- 工具同时返回图片内容块和绝对路径。支持图片的 Pi 终端使用内置工具结果预览，其余终端可以打开文件。模型也能拿到路径，用于复制成项目素材或继续编辑。项目交付避免覆盖现有文件，用户明确要求替换时除外。
+- 工具同时返回图片内容块和绝对路径，`structuredContent.image_url` 供 codemode 脚本预览。支持图片的 Pi 终端使用内置工具结果预览，其余终端可以打开文件。模型也能拿到路径，用于复制成项目素材或继续编辑。项目交付避免覆盖现有文件，用户明确要求替换时除外。
 - “把刚才那张改一下”优先使用当前会话中已经返回、能明确对应到目标图片的路径。首版暂缓 `num_last_images_to_include`。只有对话内粘贴图等无可用文件路径的情形才需要该机制。Skill 对此明确说明，要求用户把图片保存为文件并提供路径，避免拿错图。
 - GIF 是该 Codex 提交新增的开发中功能，默认关闭。首版以默认静态图行为为准。
 
@@ -50,7 +51,7 @@ flowchart LR
 | 场景 | 可观察结果 |
 | --- | --- |
 | 普通对话 | 模型的请求中没有 `image_gen` 的完整声明 |
-| 第一次说“生成一张图” | 模型读取 Skill，搜索并调用 `image_gen`。测试上游收到 `/images/generations` 和与 Codex 一致的静态图 JSON 字段 |
+| 第一次说“生成一张图” | 模型读取 Skill，在 `codemode` 脚本里调用 `image_gen`。测试上游收到 `/images/generations` 和与 Codex 一致的静态图 JSON 字段 |
 | 要求透明背景 | 请求发送 `"background": "transparent"`。使用含 alpha 的 PNG 响应测出保存的字节和 alpha 未改变 |
 | 指定一张或多张本地参考图 | 请求改走 `/images/edits`，图片顺序、MIME 和字节符合输入文件 |
 | 编辑刚生成的图 | 第二次调用把前一次返回的文件路径用作参考图，第二份产物单独保存 |
